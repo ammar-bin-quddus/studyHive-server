@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 app.use(express.json());
 app.use(cors());
@@ -42,10 +42,42 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await assignmentsCollection.findOne(query);
+      res.send(result);
+    });
+
     app.post("/allAssignments", async (req, res) => {
       const newAssignments = req.body;
       //console.log(newAssignments);
       const result = await assignmentsCollection.insertOne(newAssignments);
+      res.send(result);
+    });
+
+    app.put("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateAssignment = req.body;
+
+      const updatedData = {
+        $set: {
+          photoUrl: updateAssignment.photoUrl,
+          title: updateAssignment.title,
+          description: updateAssignment.description,
+          marks: updateAssignment.marks,
+          startDate: updateAssignment.startDate,
+          level: updateAssignment.level,
+        },
+      };
+
+      const result = await assignmentsCollection.updateOne(
+        filter,
+        updatedData,
+        options
+      );
       res.send(result);
     });
 
