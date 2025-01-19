@@ -36,6 +36,14 @@ async function run() {
       .db("assignmentsDB")
       .collection("assignments");
 
+    const submittedAssignmentCollection = client
+      .db("assignmentsDB")
+      .collection("submittedAssignments");
+
+    const checkedAssignmentCollection = client
+      .db("assignmentsDB")
+      .collection("checkedAssignments");
+
     app.get("/allAssignments", async (req, res) => {
       const cursor = assignmentsCollection.find();
       const result = await cursor.toArray();
@@ -49,10 +57,23 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/allAssignments/pendingTasks", async (req, res) => {
+      const cursor = submittedAssignmentCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+
     app.get("/allAssignments/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await assignmentsCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/allAssignments/pendingTasks/marks", async(req, res) => {
+      const checkedAssignmentData = req.body;
+      const result = await checkedAssignmentCollection.insertOne(checkedAssignmentData);
       res.send(result);
     });
 
@@ -62,6 +83,14 @@ async function run() {
       const result = await assignmentsCollection.insertOne(newAssignments);
       res.send(result);
     });
+
+    app.post("/allAssignments/pendingTasks", async (req, res) => {
+      const submitData = req.body;
+      const result = await submittedAssignmentCollection.insertOne(submitData);
+      res.send(result);
+    });
+
+    
 
     app.put("/update/:id", async (req, res) => {
       const id = req.params.id;
@@ -78,7 +107,7 @@ async function run() {
           dueDate: updateAssignment.dueDate,
           level: updateAssignment.level,
         },
-      }; 
+      };
 
       const result = await assignmentsCollection.updateOne(
         filter,
