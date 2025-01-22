@@ -40,9 +40,13 @@ async function run() {
       .db("assignmentsDB")
       .collection("submittedAssignments");
 
-    const checkedAssignmentCollection = client
+    const userDataCollection = client
       .db("assignmentsDB")
-      .collection("checkedAssignments");
+      .collection("userDb");
+
+    // const checkedAssignmentCollection = client
+    //   .db("assignmentsDB")
+    //   .collection("checkedAssignments");
 
     app.get("/allAssignments", async (req, res) => {
       const cursor = assignmentsCollection.find();
@@ -63,7 +67,6 @@ async function run() {
       res.send(result);
     });
 
-
     app.get("/allAssignments/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -71,9 +74,15 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/allAssignments/pendingTasks/marks", async(req, res) => {
-      const checkedAssignmentData = req.body;
-      const result = await checkedAssignmentCollection.insertOne(checkedAssignmentData);
+    app.get("/attempted-assignments", async (req, res) => {
+      const { email } = req.query;
+      const result = await submittedAssignmentCollection.find({ examineeEmail: email }).toArray();
+      res.send(result);
+    });
+
+    app.post("/users", async (req, res) => {
+      const userData = req.body;
+      const result = await userDataCollection.insertOne(userData);
       res.send(result);
     });
 
@@ -89,8 +98,6 @@ async function run() {
       const result = await submittedAssignmentCollection.insertOne(submitData);
       res.send(result);
     });
-
-    
 
     app.put("/update/:id", async (req, res) => {
       const id = req.params.id;
@@ -114,6 +121,17 @@ async function run() {
         updatedData,
         options
       );
+      res.send(result);
+    });
+
+    app.patch("/allAssignments/pendingTasks/marks/:id", async (req, res) => {
+      const id = req.params.id;
+      const updateData = req.body;
+      const query = { _id: new ObjectId(id) };
+
+      const result = await submittedAssignmentCollection.updateOne(query, {
+        $set: updateData,
+      });
       res.send(result);
     });
 
