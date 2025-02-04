@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const jwt = require("jsonwebtoken");
 
 app.use(express.json());
 app.use(cors());
@@ -40,13 +41,34 @@ async function run() {
       .db("assignmentsDB")
       .collection("submittedAssignments");
 
-    const userDataCollection = client
-      .db("assignmentsDB")
-      .collection("userDb");
+    const userDataCollection = client.db("assignmentsDB").collection("userDb");
 
     // const checkedAssignmentCollection = client
     //   .db("assignmentsDB")
     //   .collection("checkedAssignments");
+
+    const verifyToken = (req, res, next) => {
+      // console.log("inside verify token", req.headers);
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: "forbidden access" });
+      }
+      const token = req.headers.authorization.split(" ")[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
 
     app.get("/allAssignments", async (req, res) => {
       const cursor = assignmentsCollection.find();
@@ -54,29 +76,31 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/update/:id", async (req, res) => {
+    app.get("/update/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await assignmentsCollection.findOne(query);
       res.send(result);
     });
 
-    app.get("/allAssignments/pendingTasks", async (req, res) => {
+    app.get("/allAssignments/pendingTasks", verifyToken, async (req, res) => {
       const cursor = submittedAssignmentCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    app.get("/allAssignments/:id", async (req, res) => {
+    app.get("/allAssignments/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await assignmentsCollection.findOne(query);
       res.send(result);
     });
 
-    app.get("/attempted-assignments", async (req, res) => {
+    app.get("/attempted-assignments", verifyToken, async (req, res) => {
       const { email } = req.query;
-      const result = await submittedAssignmentCollection.find({ examineeEmail: email }).toArray();
+      const result = await submittedAssignmentCollection
+        .find({ examineeEmail: email })
+        .toArray();
       res.send(result);
     });
 
@@ -85,6 +109,11 @@ async function run() {
       const result = await userDataCollection.insertOne(userData);
       res.send(result);
     });
+
+    app.get("/users", verifyToken, async(req, res) => {
+      const result = await userDataCollection.find().toArray();
+      res.send(result);
+    })
 
     app.post("/allAssignments", async (req, res) => {
       const newAssignments = req.body;
@@ -99,7 +128,7 @@ async function run() {
       res.send(result);
     });
 
-    app.put("/update/:id", async (req, res) => {
+    app.put("/update/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -124,7 +153,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/allAssignments/pendingTasks/marks/:id", async (req, res) => {
+    app.patch("/allAssignments/pendingTasks/marks/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const updateData = req.body;
       const query = { _id: new ObjectId(id) };
