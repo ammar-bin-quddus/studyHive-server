@@ -71,8 +71,20 @@ async function run() {
     });
 
     app.get("/allAssignments", async (req, res) => {
-      const cursor = assignmentsCollection.find();
-      const result = await cursor.toArray();
+      const search = req.query.search || "";
+      const level = req.query.level || "";
+
+      const query = {};
+
+      if (search) {
+        query.title = { $regex: search, $options: "i" };
+      }
+
+      if (level) {
+        query.level = level;
+      }
+
+      const result = await assignmentsCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -110,10 +122,10 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/users", verifyToken, async(req, res) => {
+    app.get("/users", verifyToken, async (req, res) => {
       const result = await userDataCollection.find().toArray();
       res.send(result);
-    })
+    });
 
     app.post("/allAssignments", async (req, res) => {
       const newAssignments = req.body;
@@ -153,16 +165,20 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/allAssignments/pendingTasks/marks/:id", verifyToken, async (req, res) => {
-      const id = req.params.id;
-      const updateData = req.body;
-      const query = { _id: new ObjectId(id) };
+    app.patch(
+      "/allAssignments/pendingTasks/marks/:id",
+      verifyToken,
+      async (req, res) => {
+        const id = req.params.id;
+        const updateData = req.body;
+        const query = { _id: new ObjectId(id) };
 
-      const result = await submittedAssignmentCollection.updateOne(query, {
-        $set: updateData,
-      });
-      res.send(result);
-    });
+        const result = await submittedAssignmentCollection.updateOne(query, {
+          $set: updateData,
+        });
+        res.send(result);
+      }
+    );
 
     app.delete("/allAssignments/:id", async (req, res) => {
       const id = req.params.id;
