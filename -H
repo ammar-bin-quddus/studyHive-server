@@ -1,0 +1,12 @@
+HTTP/1.1 204 No Content
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+Cache-Control: public, max-age=0, must-revalidate
+Date: Tue, 12 Aug 2025 14:30:35 GMT
+Server: Vercel
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+Vary: Origin, Access-Control-Request-Headers
+X-Powered-By: Express
+X-Vercel-Cache: MISS
+X-Vercel-Id: bom1::iad1::vn5mt-1755009034899-4dd905ea7dad
+
